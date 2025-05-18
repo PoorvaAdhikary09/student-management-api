@@ -5,8 +5,17 @@ from bson import ObjectId
 from typing import Optional, List
 import random
 from pymongo import MongoClient
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+# Allow all origins (for development only)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # MongoDB Atlas connection - USING YOUR CREDENTIALS
 MONGODB_URL = "mongodb+srv://Poorva:123@firstcluster.arfxwud.mongodb.net/"
@@ -48,6 +57,16 @@ async def get_all_students():
             "email": doc["email"]
         })
     return students
+
+# GET by ID
+@app.get("/students/{student_id}", response_model=Student)
+async def get_student(student_id: int):
+    student = students_collection.find_one({"student_id": student_id})
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+    # Convert ObjectId to string
+    student["_id"] = str(student["_id"])
+    return student
 
 # CREATE
 @app.post("/students/", response_model=Student, status_code=201)
